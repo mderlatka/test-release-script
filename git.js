@@ -13,7 +13,7 @@ function pushBranchAndTags() {
 
 function rebaseDevelopWithMaster() {
   try {
-    console.log(`${EOL}${chalk.bgBlue.white(`Rebasing branch develop onto master${branchName}...`)}${EOL}`);
+    console.log(`${EOL}${chalk.bgBlue.white(`Rebasing branch develop onto master...`)}${EOL}`);
     console.log(execSync('git rebase master develop').toString());
   } catch (err) {
     const processOutput = err.stdout.toString();
