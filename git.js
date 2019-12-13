@@ -10,16 +10,16 @@ function pushBranchAndTags() {
 
 function rebaseDevelopWithMaster() {
   try {
-    console.log(execSync('git rebase master development').toString());
+    console.log(execSync('git rebase master develop').toString());
   } catch (err) {
     const processOutput = err.stdout.toString();
     const errorInfo = err.stderr.toString();
 
-    console.log(`${EOL}run: "git rebase master development"${EOL}`);
+    console.log(`${EOL}run: "git rebase master develop"${EOL}`);
 
     console.log(processOutput);
     console.log(chalk.bgRed.white('!!!  WATCH OUT  !!!'));
-    console.log('You are trying to rebase development onto master');
+    console.log('You are trying to rebase develop onto master');
     console.log(`${EOL}${chalk.bgRed.white(errorInfo)}`);
 
     if (processOutput.search('CONFLICT') > -1) {
