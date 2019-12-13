@@ -42,9 +42,9 @@ const Git = {
       console.log(chalk.red(errorInfo));
   
       if (processOutput.search('CONFLICT') > -1) {
-        console.log(chalk.red('Some CONFLICTS were found!'));
+        console.log(chalk.red.bold('Some CONFLICTS were found!'));
         execSync('git rebase --abort');
-        console.log('Rebase was aborted. Please rebase it manually!');
+        console.log(chalk.red(`Rebase was aborted. Please rebase ${branchToRebase} onto ${rebaseTarget} manually!`));
       }
   
       process.exit(1);
@@ -62,6 +62,6 @@ if (Git.currentBranch === 'develop') {
   Git.pushCurrentBranch();
 } else {
   console.error(chalk.bgRed.white(`Something is wrong, you are on ${Git.currentBranch} branch!`));
-  console.error(chalk.bgRed.white('Automatic update of git origin is available on develop or master only!'));
+  console.error(chalk.bgRed.white('Automatic update of git origin is available on develop or master branch only!'));
   process.exit(1);
 }
