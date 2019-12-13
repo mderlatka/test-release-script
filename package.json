@@ -1,12 +1,14 @@
 {
   "name": "test-release-script",
-  "version": "1.2.5-0",
+  "version": "1.2.6-0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "deploy": "echo \"S3 TASK\"",
+    "preversion": "node git",
+    "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
-    "version": "echo \"TEST\""
+    "postversion": "yarn deploy && git.js",
+    "reinstall": "rm -rf ./node_modules && yarn install"
   },
   "repository": {
     "type": "git",
