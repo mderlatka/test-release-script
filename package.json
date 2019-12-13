@@ -22,5 +22,8 @@
   "homepage": "https://github.com/damianwisniewski/test-release-script#readme",
   "devDependencies": {
     "chalk": "^3.0.0"
+  },
+  "dependencies": {
+    "simple-git": "^1.128.0"
   }
 }
