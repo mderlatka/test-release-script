@@ -4,12 +4,16 @@ const { EOL } = require('os');
 const chalk = require('chalk');
 
 function pushBranchAndTags() {
+  const branchName = execSync('git branch | grep \\* | cut -d \' \' -f2').toString().trim()
+  console.log(`${EOL}${chalk.bgBlue.white(`Pushing branch ${branchName}...`)}${EOL}`);
+
   console.log(execSync('git push').toString());
   console.log(execSync('git push --tags').toString());
 }
 
 function rebaseDevelopWithMaster() {
   try {
+    console.log(`${EOL}${chalk.bgBlue.white(`Rebasing branch develop onto master${branchName}...`)}${EOL}`);
     console.log(execSync('git rebase master develop').toString());
   } catch (err) {
     const processOutput = err.stdout.toString();
