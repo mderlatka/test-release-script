@@ -74,7 +74,7 @@ const updateBranches = async (operation) => {
   process.exit(1);
 }
 
-const prepareBranches = () => {
+const prepareBranches = async () => {
   const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
   const operationType = establishOperationType(versionScriptArg);
   let status;
@@ -95,6 +95,7 @@ const prepareBranches = () => {
   updateBranches(operationType);
 }
 
+prepareBranches()
 
 // /**
 //  * @namespace Git
