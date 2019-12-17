@@ -1,28 +1,86 @@
 /* eslint-disable no-console */
 const { execSync } = require('child_process');
 const chalk = require('chalk');
-const git = require('simple-git')();
+const git = require('simple-git/promise')();
 
-git.fetch((a, s) => {
-console.log(s)
-})
-git.status((error, status) => {
-  const {files: filesChanged, current: currentBranch, ahead, behind} = status;
+const versionArg = JSON.parse(process.env.npm_config_argv).original[1]
 
-  if (error) {
+const establishOperationType = () => {
+  const operationTypes = {
+    prerelease: ['--prepatch', '--preminor', '--premajor', '--prerelease'],
+    release: ['--patch', '--minor', '--major'],
+  };
+
+  let currentOperationType;
+
+  Object.entries(operationTypes).forEach(([key, value]) => {
+    if(value.includes(versionArg)) {
+      currentOperationType = key;
+    }
+  })
+
+  return currentOperationType
+}
+
+// git.status((error, status) => {
+//   const { current: currentBranch } = status;
+
+//   if (error) {
+//     console.error(error);
+//     process.exit(1);
+//   }
+
+//   if (currentBranch === 'develop') {
+//   } else if (currentBranch === 'master') {
+//   } else {
+//     console.error(chalk.red.bold(`Something is wrong, you are on ${currentBranch} branch!`));
+//     console.error(chalk.red.bold('Automatic update of git origin is available on develop or master branch only!'));
+//     process.exit(1);
+//   }
+// });
+
+const test = async () => {
+  let status;
+
+  console.log(await git.fetch())
+
+  try {
+    status = await git.status()
+  } catch(err) {
+    console.error(chalk.red.bold(`ERROR: Something is wrong!`));
     console.error(error);
     process.exit(1);
   }
 
-  if (currentBranch === 'develop') {
+  if (status.files.length) {
+    console.error(chalk.red.bold(`ERROR: You have some uncommitted changes!`));
+    process.exit(1);
+  }
 
-  } else if (currentBranch === 'master') {
+  if (status.ahead) {
+    console.error(chalk.red.bold(`ERROR: Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`));
+    process.exit(1);
+  }
 
-  } else {
+  process.exit(1);
+};
+
+// const cos = async () => {
+//   await
+// }
+
+test();
+
+const updateBranches = async (operation) => {
+  let status;
+  
+  await git.checkoutLocalBranch('develop');
+  status = await git.status();
+
+  if (operation === 'release') {
 
   }
-});
-
+}
 // console.log(execSync('git status').toString())
 
 
