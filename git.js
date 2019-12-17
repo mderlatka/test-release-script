@@ -73,10 +73,11 @@ test();
 
 const updateBranches = async (operation) => {
   let status;
-  
-  await git.checkoutLocalBranch('develop');
-  status = await git.status();
 
+  await git.checkoutLocalBranch('develop');
+  status = await git.pull();
+
+  console.log(status)
   if (operation === 'release') {
 
   }
