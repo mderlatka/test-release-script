@@ -20,27 +20,7 @@ const establishOperationType = (versionArg) => {
   return currentOperationType
 }
 
-const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
-const operationType = establishOperationType(versionScriptArg);
-
-// git.status((error, status) => {
-//   const { current: currentBranch } = status;
-
-//   if (error) {
-//     console.error(error);
-//     process.exit(1);
-//   }
-
-//   if (currentBranch === 'develop') {
-//   } else if (currentBranch === 'master') {
-//   } else {
-//     console.error(chalk.red.bold(`Something is wrong, you are on ${currentBranch} branch!`));
-//     console.error(chalk.red.bold('Automatic update of git origin is available on develop or master branch only!'));
-//     process.exit(1);
-//   }
-// });
-
-const test = async () => {
+const checkForUncommittedChanges = async () => {
   let status;
 
   try {
@@ -56,20 +36,21 @@ const test = async () => {
     process.exit(1);
   }
 
+  await git.checkout('develop');
+
   if (status.ahead) {
     console.error(chalk.red.bold(`ERROR: Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`));
     process.exit(1);
   }
 };
 
-// test();
-
 const updateBranches = async (operation) => {
   let developStatus;
   let masterStatus;
 
+  console.log(chalk.bgWhite.white(`Updating branches...`));
+
   try {
-    await git.checkout('develop');
     developStatus = await git.pull('origin', 'develop', { '--rebase': 'true' });
     console.log(chalk.blue.bold(`Develop branch ${developStatus.files.length ? 'has been updated.' : 'is up to date'}`));
   } catch(err) {
@@ -93,7 +74,26 @@ const updateBranches = async (operation) => {
   process.exit(1);
 }
 
+const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
+const operationType = establishOperationType(versionScriptArg);
+let status;
+
+try {
+  status = await git.status()
+} catch(err) {
+  console.error(chalk.red.bold(`ERROR: Something is wrong!`));
+  console.error(error);
+  process.exit(1);
+}
+
+if (status.files.length) {
+  console.error(chalk.red.bold(`ERROR: You have some uncommitted changes!`));
+  process.exit(1);
+}
+
 updateBranches(operationType);
+
+
 
 // /**
 //  * @namespace Git
