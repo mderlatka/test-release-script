@@ -95,7 +95,7 @@ const prepareBranches = async () => {
 
   if (operationType === 'release') {
     console.log('release')
-    git.rebase(['develop', 'master'])
+    await git.rebase(['develop', 'master'])
   }
 
   process.exit(1);
