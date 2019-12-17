@@ -7,3 +7,4 @@ CONFLICT
 change4
 
 test
+test1
