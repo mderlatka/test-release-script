@@ -48,7 +48,7 @@ const updateBranches = async (operation) => {
   let developStatus;
   let masterStatus;
 
-  console.log(chalk.bgGreen.white(`Updating branches...`));
+  console.log(chalk.bgCyan.white(`Updating branches...`));
 
   try {
     await git.checkout('develop')
@@ -94,6 +94,7 @@ const prepareBranches = async () => {
   await updateBranches(operationType);
 
   if (operationType === 'release') {
+    console.log('release')
     git.rebase(['develop', 'master'])
   }
 
