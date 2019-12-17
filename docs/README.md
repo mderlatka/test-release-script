@@ -5,3 +5,5 @@ change2
 change3
 CONFLICT
 change4
+
+test
