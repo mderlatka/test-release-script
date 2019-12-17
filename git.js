@@ -51,7 +51,10 @@ const updateBranches = async (operation) => {
   console.log(chalk.bgGreen.white(`Updating branches...`));
 
   try {
+    console.log('test')
     await git.checkout('develop');
+
+    console.log('tes2')
     developStatus = await git.pull('origin', 'develop', { '--rebase': 'true' });
     console.log(chalk.blue.bold(`Develop branch ${developStatus.files.length ? 'has been updated.' : 'is up to date'}`));
   } catch(err) {
