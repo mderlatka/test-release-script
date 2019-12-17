@@ -1,177 +1,153 @@
 /* eslint-disable no-console */
-const { execSync } = require('child_process');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
-const establishOperationType = (versionArg) => {
-  const operationTypes = {
+const scriptName = process.env.npm_lifecycle_event;
+const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
+
+/**
+ * @namespace GitUpdater
+ */
+const GitUpdater = {
+  /**
+   * Possible yarn version arguments and release type they belongs to.
+   */
+  possibleOperationTypes: {
     prerelease: ['--prepatch', '--preminor', '--premajor', '--prerelease'],
     release: ['--patch', '--minor', '--major'],
-  };
+  },
 
-  let currentOperationType;
+  /**
+   * Returns operation type that depend on argument passed to yarn version script
+   * @param {string} versionArg
+   * @returns {('prerelease'|'release')}
+   */
+  establishOperationType: function(scriptArg) {
+    let currentOperationType;
+  
+    Object.entries(this.possibleOperationTypes).forEach(([key, value]) => {
+      if(value.includes(scriptArg)) {
+        currentOperationType = key;
+      }
+    })
+  
+    return currentOperationType
+  },
 
-  Object.entries(operationTypes).forEach(([key, value]) => {
-    if(value.includes(versionArg)) {
-      currentOperationType = key;
-    }
-  })
-
-  return currentOperationType
-}
-
-const checkForUncommittedChanges = async () => {
-  let status;
-
-  try {
-    status = await git.status()
-  } catch(err) {
-    console.error(chalk.red.bold(`ERROR: Something is wrong!`));
+  /**
+   * Logs error information and exits the process with error
+   * @param {string} errorInfo
+   * @param {any} error
+   */
+  stopWithErrorLog: function(errorInfo, error) {
+    console.error(chalk.red.bold(`ERROR: ${errorInfo}`));
     console.error(error);
     process.exit(1);
-  }
+  },
 
-  if (status.files.length) {
-    console.error(chalk.red.bold(`ERROR: You have some uncommitted changes!`));
-    process.exit(1);
-  }
+  /**
+   * Check for uncommitted files on branch you are currently.
+   * @returns {number} amount of uncommitted files that contains changes.
+   */
+  checkForUncommittedFiles: async function() {
+    let status;
 
-  await git.checkout('develop');
-
-  if (status.ahead) {
-    console.error(chalk.red.bold(`ERROR: Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`));
-    process.exit(1);
-  }
-};
-
-const updateBranches = async (operation) => {
-  let developStatus;
-  let masterStatus;
-
-  console.log(chalk.bgCyan.white(`Updating branches...`));
-
-  try {
-    await git.checkout('develop')
-    developStatus = await git.pull('origin', 'develop', { '--rebase': 'true' });
-    console.log(chalk.blue.bold(`Develop branch ${developStatus.files.length ? 'has been updated.' : 'is up to date'}`));
-  } catch(err) {
-    console.error(chalk.red.bold(`ERROR: Something is wrong!`));
-    console.error(err);
-    process.exit(1);
-  }
-
-  if (operation === 'release') {
     try {
-      await git.checkout('master');
-      masterStatus = await git.pull('origin', 'master', { '--rebase': 'true' });
-      console.log(chalk.blue.bold(`Master branch ${masterStatus.files.length ? 'has been updated.' : 'is up to date'}`));
+      const status = await git.status()
     } catch(err) {
-      console.error(chalk.red.bold(`ERROR: Something is wrong!`));
-      console.error(err);
-      process.exit(1);
+      stopWithError(`ERROR: Something is wrong!`, err);
+    }
+
+    return status.files.length;
+  },
+
+  /**
+   * Updates branch with origin.
+   * @param {string} branch 
+   */
+  updateBranch: async function(branch) {
+    try {
+      await git.checkout(branch)
+      const status = await git.status()
+
+      if (status.ahead) {
+        this.stopWithErrorLog(`ERROR: Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
+      }
+
+      if (status.behind) {
+        await git.pull('origin', branch, { '--rebase': 'true' });
+      }
+
+      console.log(chalk.blue.bold(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`));
+    } catch(err) {
+      this.stopWithErrorLog(`ERROR: While updating ${branch}!`, err);
+    }
+  },
+
+  /**
+   * Rebase branch onto target branch.
+   * @param {string} rebaseTarget
+   * @param {string} branchToRebase
+   */
+  rebaseBranches: async function(rebaseTarget, branchToRebase) {
+    try {
+      console.log(chalk.blue.bold(`Rebasing branch ${branchToRebase} onto ${rebaseTarget}...`));
+      await git.rebase([rebaseTarget, branchToRebase])
+    } catch(err) {
+      this.stopWithErrorLog(`ERROR: Something is wrong!`, err);
+    }
+  },
+
+  /**
+   * Updates local git repository with origin, before release happens.
+   * - develop branch for operation argument equal "prerelease"
+   * - develop and master for operation argument equal "release"
+   * - rebase master onto develop for operation argument equal "release"
+   * @param {string} operation
+   */
+  prepareRelease: async function(scriptArg) {
+    const operationType = this.establishOperationType(scriptArg);
+    const amountOfUncommittedFiles = await this.checkForUncommittedFiles();
+
+    if (amountOfUncommittedFiles) {
+      this.stopWithErrorLog(`ERROR: You have some uncommitted changes!`);
+    }
+
+    console.log(chalk.blue(`Updating branches...`));
+    await this.updateBranch('develop')
+  
+    if (operationType === 'release') {
+      await this.updateBranch('master')
+      await this.rebaseBranches('develop', 'master')
+    }
+  },
+
+  /**
+   * Updates git repository after release process.
+   * - Pushes version commits and tags
+   * - Makes develop up to date with master
+   */
+  finishRelease: async function() {
+    const operationType = this.establishOperationType(scriptArg);
+
+    if (operationType === 'prerelease') {
+      await git.push('origin', 'develop');
+      await git.pushTags('origin');
+    } else {
+      await git.push('origin', 'master');
+      await git.pushTags('origin');
+      await this.rebaseBranches('master', 'develop');
+      await git.push('origin', 'develop');
     }
   }
 }
 
-const prepareBranches = async () => {
-  const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
-  const operationType = establishOperationType(versionScriptArg);
-  let status;
-
-  try {
-    status = await git.status()
-  } catch(err) {
-    console.error(chalk.red.bold(`ERROR: Something is wrong!`));
-    console.error(error);
-    process.exit(1);
-  }
-
-  if (status.files.length) {
-    console.error(chalk.red.bold(`ERROR: You have some uncommitted changes!`));
-    process.exit(1);
-  }
-
-  await updateBranches(operationType);
-
-  if (operationType === 'release') {
-    console.log('release')
-    await git.rebase(['develop', 'master'])
-  }
-
-  process.exit(1);
+if (scriptName === 'preversion') {
+  console.log(chalk.bgBlue.white(' Running "preversion" script... '));
+  GitUpdater.prepareRelease(versionScriptArg);
+} else if (scriptName === 'postversion') {
+  console.log(chalk.bgBlue.white(' Running "postversion" script... '));
+  GitUpdater.finishRelease(versionScriptArg);
+} else {
+  GitUpdater.stopWithErrorLog('This script should run with "preversion" and "postversion" scripts only!')
 }
-
-prepareBranches()
-
-// /**
-//  * @namespace Git
-//  */
-// const Git = {
-//   /**
-//    * Returns branch name you are currently on
-//    * @returns {string}
-//    */
-//   get currentBranch() {
-//     return execSync('git branch | grep \\* | cut -d \' \' -f2').toString().trim();
-//   },
-
-//   pushCurrentBranch: function() {
-//     console.log(chalk.blue.bold(`Pushing branch ${this.currentBranch}...`));
-//     console.log(execSync('git push').toString());
-//   },
-
-//   pushTags: function() {
-//     console.log(chalk.blue.bold(`Pushing tags...`));
-//     console.log(execSync('git push --tags').toString());
-//   },
-
-//   fetch: function() {
-//     console.log(chalk.blue.bold(`Pushing tags...`));
-//     console.log(execSync('git fetch').toString());
-//   },
-
-//   status: function() {
-//     const = execSync('git status').toString();
-//   }
-
-//   /**
-//    * Rebasing branches
-//    * @param {string} branchToRebase branch to checkout on
-//    * @param {string} rebaseTarget branch to rebase with
-//    */
-//   rebaseBranches: function(branchToRebase, rebaseTarget) {
-//     try {
-//       console.log(chalk.blue.bold(`Rebasing branch ${branchToRebase} onto ${rebaseTarget}...`));
-//       console.log(execSync(`git rebase ${rebaseTarget} ${branchToRebase}`).toString());
-//     } catch (err) {
-//       const processOutput = err.stdout.toString();
-//       const errorInfo = err.stderr.toString();
-  
-//       console.log(processOutput);
-//       console.log(chalk.bgRed.white('!!!  ERROR  !!!'));
-//       console.log(chalk.red(errorInfo));
-  
-//       if (processOutput.search('CONFLICT') > -1) {
-//         console.log(chalk.red.bold('Some CONFLICTS were found!'));
-//         execSync('git rebase --abort');
-//         console.log(chalk.red(`Rebase was aborted. Please rebase ${branchToRebase} onto ${rebaseTarget} manually!`));
-//       }
-  
-//       process.exit(1);
-//     }
-//   }
-// }
-
-// if (Git.currentBranch === 'develop') {
-//   Git.pushCurrentBranch();
-//   Git.pushTags();
-// } else if (Git.currentBranch === 'master') {
-//   Git.pushCurrentBranch();
-//   Git.pushTags();
-//   Git.rebaseBranches('develop', 'master');
-//   Git.pushCurrentBranch();
-// } else {
-//   console.error(chalk.bgRed.white(`Something is wrong, you are on ${Git.currentBranch} branch!`));
-//   console.error(chalk.bgRed.white('Automatic update of git origin is available on develop or master branch only!'));
-//   process.exit(1);
-// }
