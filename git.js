@@ -55,8 +55,10 @@ const GitUpdater = {
     try {
       const status = await git.status()
     } catch(err) {
+      console.log(err)
       stopWithError(`ERROR: Something is wrong!`, err);
     }
+
 
     return status.files.length;
   },
@@ -127,7 +129,7 @@ const GitUpdater = {
    * - Pushes version commits and tags
    * - Makes develop up to date with master
    */
-  finishRelease: async function() {
+  finishRelease: async function(scriptArg) {
     const operationType = this.establishOperationType(scriptArg);
 
     if (operationType === 'prerelease') {
