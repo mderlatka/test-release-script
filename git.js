@@ -74,25 +74,26 @@ const updateBranches = async (operation) => {
   process.exit(1);
 }
 
-const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
-const operationType = establishOperationType(versionScriptArg);
-let status;
+const prepareBranches = () => {
+  const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
+  const operationType = establishOperationType(versionScriptArg);
+  let status;
 
-try {
-  status = await git.status()
-} catch(err) {
-  console.error(chalk.red.bold(`ERROR: Something is wrong!`));
-  console.error(error);
-  process.exit(1);
+  try {
+    status = await git.status()
+  } catch(err) {
+    console.error(chalk.red.bold(`ERROR: Something is wrong!`));
+    console.error(error);
+    process.exit(1);
+  }
+
+  if (status.files.length) {
+    console.error(chalk.red.bold(`ERROR: You have some uncommitted changes!`));
+    process.exit(1);
+  }
+
+  updateBranches(operationType);
 }
-
-if (status.files.length) {
-  console.error(chalk.red.bold(`ERROR: You have some uncommitted changes!`));
-  process.exit(1);
-}
-
-updateBranches(operationType);
-
 
 
 // /**
