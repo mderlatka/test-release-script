@@ -3,9 +3,7 @@ const { execSync } = require('child_process');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
-const versionArg = JSON.parse(process.env.npm_config_argv).original[1]
-
-const establishOperationType = () => {
+const establishOperationType = (versionArg) => {
   const operationTypes = {
     prerelease: ['--prepatch', '--preminor', '--premajor', '--prerelease'],
     release: ['--patch', '--minor', '--major'],
@@ -21,6 +19,9 @@ const establishOperationType = () => {
 
   return currentOperationType
 }
+
+const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
+const operationType = establishOperationType(versionScriptArg);
 
 // git.status((error, status) => {
 //   const { current: currentBranch } = status;
@@ -42,8 +43,6 @@ const establishOperationType = () => {
 const test = async () => {
   let status;
 
-  console.log(await git.fetch())
-
   try {
     status = await git.status()
   } catch(err) {
@@ -63,30 +62,38 @@ const test = async () => {
   }
 };
 
-// const cos = async () => {
-//   await
-// }
-
 // test();
 
 const updateBranches = async (operation) => {
-  let status;
+  let developStatus;
+  let masterStatus;
 
-  await git.checkout('develop');
-  status = await git.pull('origin', 'develop', { '--rebase': 'true' });
-
-  console.log(status)
+  try {
+    await git.checkout('develop');
+    developStatus = await git.pull('origin', 'develop', { '--rebase': 'true' });
+    console.log(chalk.blue.bold(`Develop branch ${developStatus.files.length ? 'has been updated.' : 'is up to date'}`));
+  } catch(err) {
+    console.error(chalk.red.bold(`ERROR: Something is wrong!`));
+    console.error(err);
+    process.exit(1);
+  }
 
   if (operation === 'release') {
-    await git.checkout('master');
-    status = await git.pull('origin', 'master', { '--rebase': 'true' });
+    try {
+      await git.checkout('master');
+      masterStatus = await git.pull('origin', 'master', { '--rebase': 'true' });
+      console.log(chalk.blue.bold(`Master branch ${masterStatus.files.length ? 'has been updated.' : 'is up to date'}`));
+    } catch(err) {
+      console.error(chalk.red.bold(`ERROR: Something is wrong!`));
+      console.error(err);
+      process.exit(1);
+    }
   }
 
   process.exit(1);
 }
-// console.log(execSync('git status').toString())
 
-updateBranches();
+updateBranches(operationType);
 
 // /**
 //  * @namespace Git
