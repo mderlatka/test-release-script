@@ -51,14 +51,10 @@ const updateBranches = async (operation) => {
   console.log(chalk.bgGreen.white(`Updating branches...`));
 
   try {
-    console.log('test')
-    await git.checkout('develop');
-
-    console.log('tes2')
+    await git.checkout('develop')
     developStatus = await git.pull('origin', 'develop', { '--rebase': 'true' });
     console.log(chalk.blue.bold(`Develop branch ${developStatus.files.length ? 'has been updated.' : 'is up to date'}`));
   } catch(err) {
-    console.log(err);
     console.error(chalk.red.bold(`ERROR: Something is wrong!`));
     console.error(err);
     process.exit(1);
@@ -95,7 +91,7 @@ const prepareBranches = async () => {
     process.exit(1);
   }
 
-  updateBranches(operationType);
+  await updateBranches(operationType);
 
   if (operationType === 'release') {
     git.rebase(['develop', 'master'])
