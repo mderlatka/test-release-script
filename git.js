@@ -58,6 +58,7 @@ const updateBranches = async (operation) => {
     developStatus = await git.pull('origin', 'develop', { '--rebase': 'true' });
     console.log(chalk.blue.bold(`Develop branch ${developStatus.files.length ? 'has been updated.' : 'is up to date'}`));
   } catch(err) {
+    console.log(err);
     console.error(chalk.red.bold(`ERROR: Something is wrong!`));
     console.error(err);
     process.exit(1);
