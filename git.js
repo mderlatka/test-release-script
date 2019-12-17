@@ -61,29 +61,30 @@ const test = async () => {
     console.error(chalk.red.bold(`ERROR: Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`));
     process.exit(1);
   }
-
-  process.exit(1);
 };
 
 // const cos = async () => {
 //   await
 // }
 
-test();
+// test();
 
 const updateBranches = async (operation) => {
   let status;
 
-  await git.checkoutLocalBranch('develop');
-  status = await git.pull();
+  await git.checkout('develop');
+  status = await git.pull('origin', 'develop', {'--rebase': 'true'});
 
   console.log(status)
   if (operation === 'release') {
 
   }
+
+  process.exit(1);
 }
 // console.log(execSync('git status').toString())
 
+updateBranches();
 
 // /**
 //  * @namespace Git
