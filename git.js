@@ -73,11 +73,13 @@ const updateBranches = async (operation) => {
   let status;
 
   await git.checkout('develop');
-  status = await git.pull('origin', 'develop', {'--rebase': 'true'});
+  status = await git.pull('origin', 'develop', { '--rebase': 'true' });
 
   console.log(status)
-  if (operation === 'release') {
 
+  if (operation === 'release') {
+    await git.checkout('master');
+    status = await git.pull('origin', 'master', { '--rebase': 'true' });
   }
 
   process.exit(1);
