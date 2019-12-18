@@ -4,11 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pre-release": "node git prerelease",
-    "release": "node git release",
+    "pre-release": "node tasks/releaseInterface prerelease",
+    "release": "node tasks/releaseInterface release",
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
-    "reinstall": "rm -rf ./node_modules && yarn install",
     "lint": "eslint src/**/*.js",
     "test:unit": "echo \"UNIT\""
   },
@@ -23,10 +22,8 @@
   },
   "homepage": "https://github.com/damianwisniewski/test-release-script#readme",
   "devDependencies": {
-    "chalk": "^3.0.0"
-  },
-  "dependencies": {
-    "lint-staged": "^9.5.0",
-    "simple-git": "^1.128.0"
+    "chalk": "^3.0.0",
+    "simple-git": "^1.128.0",
+    "eslint": "^6.7.2"
   }
 }

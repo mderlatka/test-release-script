@@ -3,10 +3,12 @@ const { execSync } = require('child_process');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
+const releaseType = process.argv[2];
+
 /**
- * @namespace GitUpdater
+ * @namespace ReleaseInterface
  */
-const GitUpdater = {
+const ReleaseInterface = {
   logHeader: function(text) {
     console.log(chalk.blue.bold('\n' + text));
   },
@@ -125,8 +127,9 @@ const GitUpdater = {
 
   /**
    * Updates git repository after release process.
-   * - Pushes version commits and tags
-   * - Makes develop up to date with master
+   * - Pushes commits and tags
+   * - Makes develop up to date with master if normal release happen
+   * @param {string} releaseType
    */
   finishRelease: async function(releaseType) {
     this.logHeader('Updating repository after release...')
@@ -147,7 +150,7 @@ const GitUpdater = {
   },
 
   /**
-   * 
+   * Runs whole release process.
    * @param {string} releaseType
    */
   makeRelease: async function(releaseType) {
@@ -164,6 +167,6 @@ const GitUpdater = {
   }
 }
 
-// if () {
-  GitUpdater.makeRelease(process.argv[2]);
-// }
+if (releaseType !== 'pre-release' || releaseType !== 'release') {
+  ReleaseInterface.makeRelease(releaseType);
+}
