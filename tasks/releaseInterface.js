@@ -185,6 +185,7 @@ if (releaseType !== 'pre-release' || releaseType !== 'release') {
       input.close()
     } else {
       console.log('cos')
+      input.prompt();
     }
   })
 }
