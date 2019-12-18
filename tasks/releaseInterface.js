@@ -46,7 +46,7 @@ const ReleaseInterface = {
     this.logHeader(`Upgrading version...`);
 
     if (versionType === 'prerelease') {
-      const { version } = require('./package.json');
+      const { version } = require('../package.json');
       const rcAlreadyExist = /\d-\d/.test(version)
 
       if (rcAlreadyExist) {
