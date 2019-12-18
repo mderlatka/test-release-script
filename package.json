@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "preversion": "node git",
+    "premake-release": "node git",
+    "make-release": "yarn version",
+    "postmake-release": "yarn deploy && node git",
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
-    "postversion": "yarn deploy && node git",
     "reinstall": "rm -rf ./node_modules && yarn install"
   },
   "repository": {
