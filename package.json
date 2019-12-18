@@ -1,18 +1,16 @@
 {
   "name": "test-release-script",
-  "version": "1.6.19",
+  "version": "1.7.0-0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pre-release": "node git prepare && node git finish",
+    "pre-release": "node git",
     "release": "node git prepare && yarn deploy && node git finish",
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
     "reinstall": "rm -rf ./node_modules && yarn install",
-    "lint-staged": "lint-staged"
-  },
-  "lint-staged": {
-    "src/*.js": "eslint"
+    "lint": "echo \"LINT\"",
+    "test:unit": "eslint src/**/*.js"
   },
   "repository": {
     "type": "git",
