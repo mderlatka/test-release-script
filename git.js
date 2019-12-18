@@ -142,12 +142,12 @@ const GitUpdater = {
   }
 }
 
-if (scriptName === 'premake-release') {
-  console.log(chalk.bgBlue.white(' Running "premake-release" script... '));
+if (scriptName === 'preversion') {
+  console.log(chalk.bgBlue.white(' Running "preversion" script... '));
   GitUpdater.prepareRelease(versionScriptArg);
-} else if (scriptName === 'postmake-release') {
-  console.log(chalk.bgBlue.white(' Running "postmake-release" script... '));
+} else if (scriptName === 'postversion') {
+  console.log(chalk.bgBlue.white(' Running "postversion" script... '));
   GitUpdater.finishRelease(versionScriptArg);
 } else {
-  GitUpdater.stopWithErrorLog('This script should run with "premake-release" and "postmake-release" scripts only!')
+  GitUpdater.stopWithErrorLog('This script should run with "preversion" and "postversion" scripts only!')
 }
