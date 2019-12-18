@@ -54,6 +54,7 @@ const GitUpdater = {
 
     try {
       const status = await git.status()
+      console.log(status)
     } catch(err) {
       console.log(err)
       stopWithError(`ERROR: Something is wrong!`, err);
