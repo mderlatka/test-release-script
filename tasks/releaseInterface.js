@@ -5,16 +5,12 @@ const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
 const releaseType = process.argv[2];
-const input = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 
 /**
  * @namespace ReleaseInterface
  */
 const ReleaseInterface = {
-  logHeader: function(text) {
+  logHeader(text) {
     console.log(chalk.blue.bold('\n' + text));
   },
 
@@ -23,7 +19,7 @@ const ReleaseInterface = {
    * @param {string} errorInfo
    * @param {any} error
    */
-  stopWithErrorLog: function(errorInfo, error) {
+  stopWithErrorLog(errorInfo, error) {
     console.error(chalk.red.bold(`ERROR: ${errorInfo}`));
     console.error(error);
     process.exit(1);
@@ -33,7 +29,7 @@ const ReleaseInterface = {
    * Executes script, using the output of parent process.
    * @param {string} script 
    */
-  execScript: function(script) {
+  execScript(script) {
     try {
       this.logHeader(`Executing script "${script}"`);
       execSync(script, { stdio: 'inherit' });
@@ -47,7 +43,7 @@ const ReleaseInterface = {
    * Upgrades version of repository.
    * @param {string} versionType 
    */
-  upgradeVersion: function(versionType) {
+  upgradeVersion(versionType) {
     this.logHeader(`Upgrading version...`);
 
     if (versionType === 'prerelease') {
@@ -68,7 +64,7 @@ const ReleaseInterface = {
    * Updates branch with origin.
    * @param {string} branch 
    */
-  updateBranch: async function(branch) {
+  async updateBranch(branch) {
     try {
       await git.checkout(branch)
       const status = await git.status()
@@ -92,7 +88,7 @@ const ReleaseInterface = {
    * @param {string} rebaseTarget
    * @param {string} branchToRebase
    */
-  rebaseBranches: async function(rebaseTarget, branchToRebase) {
+  async rebaseBranches(rebaseTarget, branchToRebase) {
     try {
       await git.rebase([rebaseTarget, branchToRebase])
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
@@ -108,7 +104,7 @@ const ReleaseInterface = {
    * - rebase master onto develop for operation argument equal "release"
    * @param {string} operation
    */
-  prepareLocalRepository: async function(releaseType) {
+  async prepareLocalRepository(releaseType) {
     let status;
 
     try {
@@ -136,7 +132,7 @@ const ReleaseInterface = {
    * - Makes develop up to date with master if normal release happen
    * @param {string} releaseType
    */
-  finishRelease: async function(releaseType) {
+  async finishRelease(releaseType) {
     this.logHeader('Updating repository after release...')
 
     try {
@@ -163,7 +159,7 @@ const ReleaseInterface = {
    * Runs whole release process.
    * @param {string} releaseType
    */
-  makeRelease: async function(releaseType) {
+  async makeRelease(releaseType) {
     await this.prepareLocalRepository(releaseType);
 
     this.execScript('yarn install');
@@ -178,14 +174,28 @@ const ReleaseInterface = {
 }
 
 if (releaseType !== 'pre-release' || releaseType !== 'release') {
-  input.question(`You are trying to execute ${releaseType}, are you sure to continue this process? [y/n]`, (answer) => {
-    if (answer === 'y') {
-      ReleaseInterface.makeRelease(releaseType);
-    } else if (answer === 'n') {
-      input.close()
-    } else {
-      console.log('cos')
-      input.prompt();
+  const input = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: '> '
+  });
+
+  console.log(`You are trying to execute ${releaseType}, are you sure to continue this process? [y/n]`)
+  input.prompt();
+
+  input.on('line', (answer) => {
+    switch (answer.trim().toLowerCase()) {
+      case 'y':
+        input.close();
+        ReleaseInterface.makeRelease(releaseType);
+        break;
+      case 'n':
+        process.exit(0);
+        break;
+      default:
+        console.log('incorrect answer!');
+        input.prompt();
+        break;
     }
-  })
+  });
 }
