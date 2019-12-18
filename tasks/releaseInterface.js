@@ -90,7 +90,7 @@ const ReleaseInterface = {
   rebaseBranches: async function(rebaseTarget, branchToRebase) {
     try {
       await git.rebase([rebaseTarget, branchToRebase])
-      console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}...`);
+      console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
     } catch(err) {
       this.stopWithErrorLog(`Something is wrong!`, err);
     }
@@ -137,12 +137,17 @@ const ReleaseInterface = {
     try {
       if (releaseType === 'release') {
         await git.push('origin', 'master');
+        console.log('Pushed master to origin');
         await git.pushTags('origin');
+        console.log('Pushed tags to origin');
         await this.rebaseBranches('master', 'develop');
         await git.push('origin', 'develop');
+        console.log('Pushed develop to origin');
       } else {
         await git.push('origin', 'develop');
+        console.log('Pushed develop to origin');
         await git.pushTags('origin');
+        console.log('Pushed tags to origin');
       }
     } catch(err) {
       this.stopWithErrorLog(`Something went wrong!`, err);
