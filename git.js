@@ -74,7 +74,7 @@ const GitUpdater = {
         await git.pull('origin', branch, { '--rebase': 'true' });
       }
 
-      this.logHeader(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`);
+      console.log(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`);
     } catch(err) {
       this.stopWithErrorLog(`While updating ${branch}!`, err);
     }
@@ -87,8 +87,8 @@ const GitUpdater = {
    */
   rebaseBranches: async function(rebaseTarget, branchToRebase) {
     try {
-      this.logHeader(`Rebasing branch ${branchToRebase} onto ${rebaseTarget}...`);
       await git.rebase([rebaseTarget, branchToRebase])
+      console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}...`);
     } catch(err) {
       this.stopWithErrorLog(`Something is wrong!`, err);
     }
@@ -114,6 +114,7 @@ const GitUpdater = {
       this.stopWithErrorLog(`You have some uncommitted changes!`);
     }
 
+    this.logHeader(`Updating local branches...`);
     await this.updateBranch('develop');
 
     if (releaseType === 'release') {
@@ -128,6 +129,8 @@ const GitUpdater = {
    * - Makes develop up to date with master
    */
   finishRelease: async function(releaseType) {
+    this.logHeader('Updating repository after release...')
+
     try {
       if (releaseType === 'release') {
         await git.push('origin', 'master');
