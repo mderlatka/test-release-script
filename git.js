@@ -121,8 +121,6 @@ const GitUpdater = {
       await this.updateBranch('master')
       await this.rebaseBranches('develop', 'master')
     }
-
-    process.exit(1)
   },
 
   /**
