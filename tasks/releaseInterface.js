@@ -181,8 +181,10 @@ if (releaseType !== 'pre-release' || releaseType !== 'release') {
   input.question(`You are trying to execute ${releaseType}, are you sure to continue this process? [y/n]`, (answer) => {
     if (answer === 'y') {
       ReleaseInterface.makeRelease(releaseType);
-    } else {
+    } else if (answer === 'n') {
       input.close()
+    } else {
+      console.log('cos')
     }
   })
 }
