@@ -1,6 +1,6 @@
 {
   "name": "test-release-script",
-  "version": "1.9.0",
+  "version": "1.10.0-0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,8 @@
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
     "reinstall": "rm -rf ./node_modules && yarn install",
-    "lint": "echo \"LINT\"",
-    "test:unit": "eslint src/**/*.js"
+    "lint": "eslint src/**/*.js",
+    "test:unit": "echo \"UNIT\""
   },
   "repository": {
     "type": "git",
