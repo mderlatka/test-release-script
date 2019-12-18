@@ -1,24 +1,15 @@
 /* eslint-disable no-console */
+const { execSync } = require('child_process');
+const { EOL } = require('os');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
-
-const scriptName = process.env.npm_lifecycle_event;
-const operationType = process.argv[2];
 
 /**
  * @namespace GitUpdater
  */
 const GitUpdater = {
-
-
-
-  /**
-   * Returns operation type that depend on argument passed to yarn version script
-   * @param {string} versionArg
-   * @returns {('prerelease'|'release')}
-   */
-  bumpUpVersion: function(scriptArg) {
-
+  logHeader: function(text) {
+    console.log(chalk.blue.bold(text + EOL));
   },
 
   /**
@@ -33,19 +24,38 @@ const GitUpdater = {
   },
 
   /**
-   * Check for uncommitted files on branch you are currently.
-   * @returns {number} amount of uncommitted files that contains changes.
+   * Executes script, using the output of parent process.
+   * @param {string} script 
    */
-  checkForUncommittedFiles: async function() {
-    let status;
-
+  execScript: function(script) {
     try {
-      status = await git.status();
+      this.logHeader(`Executing script "${script}"`);
+      execSync(script, { stdio: 'inherit' });
     } catch(err) {
-      this.stopWithErrorLog(`Something is wrong!`, err);
+      this.stopWithErrorLog(`Executing of script "${script}" failed!`)
     }
+  },
 
-    return status.files.length;
+
+  /**
+   * Upgrades version of repository.
+   * @param {string} versionType 
+   */
+  upgradeVersion: function(versionType) {
+    this.logHeader(`Upgrading version...`);
+
+    if (versionType === 'prerelease') {
+      const { version } = require('./package.json');
+      const rcAlreadyExist = /\d-\d/.test(version)
+
+      if (rcAlreadyExist) {
+        this.execScript('yarn version --prerelease');
+      } else {
+        this.execScript('yarn version --preminor');
+      }
+    } else if (versionType === 'release') {
+      this.execScript('yarn version --minor');
+    }
   },
 
   /**
@@ -65,7 +75,7 @@ const GitUpdater = {
         await git.pull('origin', branch, { '--rebase': 'true' });
       }
 
-      console.log(chalk.blue.bold(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`));
+      this.logHeader(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`);
     } catch(err) {
       this.stopWithErrorLog(`While updating ${branch}!`, err);
     }
@@ -78,7 +88,7 @@ const GitUpdater = {
    */
   rebaseBranches: async function(rebaseTarget, branchToRebase) {
     try {
-      console.log(chalk.blue.bold(`Rebasing branch ${branchToRebase} onto ${rebaseTarget}...`));
+      this.logHeader(`Rebasing branch ${branchToRebase} onto ${rebaseTarget}...`);
       await git.rebase([rebaseTarget, branchToRebase])
     } catch(err) {
       this.stopWithErrorLog(`Something is wrong!`, err);
@@ -92,18 +102,22 @@ const GitUpdater = {
    * - rebase master onto develop for operation argument equal "release"
    * @param {string} operation
    */
-  prepareRelease: async function(scriptArg) {
-    const operationType = this.establishOperationType(scriptArg);
-    const amountOfUncommittedFiles = await this.checkForUncommittedFiles();
+  prepareLocalRepository: async function(releaseType) {
+    let status;
 
-    if (amountOfUncommittedFiles) {
+    try {
+      status = await git.status();
+    } catch(err) {
+      this.stopWithErrorLog(`Something is wrong!`, err);
+    }
+
+    if (status.files.length) {
       this.stopWithErrorLog(`You have some uncommitted changes!`);
     }
 
-    console.log(chalk.blue(`Updating branches...`));
-    await this.updateBranch('develop')
-  
-    if (scriptName === 'release') {
+    await this.updateBranch('develop');
+
+    if (releaseType === 'release') {
       await this.updateBranch('master')
       await this.rebaseBranches('develop', 'master')
     }
@@ -114,31 +128,40 @@ const GitUpdater = {
    * - Pushes version commits and tags
    * - Makes develop up to date with master
    */
-  finishRelease: async function(scriptArg) {
-    const operationType = this.establishOperationType(scriptArg);
-
+  finishRelease: async function(releaseType) {
     try {
-      if (scriptName === 'pre-release') {
-        await git.push('origin', 'develop');
-        await git.pushTags('origin');
-      } else if (scriptName === 'release') {
+      if (releaseType === 'release') {
         await git.push('origin', 'master');
         await git.pushTags('origin');
         await this.rebaseBranches('master', 'develop');
         await git.push('origin', 'develop');
+      } else {
+        await git.push('origin', 'develop');
+        await git.pushTags('origin');
       }
     } catch(err) {
       this.stopWithErrorLog(`Something went wrong!`, err);
     }
+  },
+
+  /**
+   * 
+   * @param {string} releaseType
+   */
+  makeRelease: async function(releaseType) {
+    await this.prepareLocalRepository(releaseType);
+
+    this.execScript('yarn install');
+    this.execScript('yarn lint');
+    this.execScript('yarn test:unit');
+
+    this.upgradeVersion(releaseType);
+    this.execScript('yarn deploy');
+
+    await this.finishRelease(releaseType);
   }
 }
 
-if (operationType === 'prepare') {
-  console.log(chalk.bgBlue.white(' Running "preversion" script... '));
-  GitUpdater.prepareRelease();
-} else if (operationType === 'finish') {
-  console.log(chalk.bgBlue.white(' Running "postversion" script... '));
-  GitUpdater.finishRelease();
-} else {
-  GitUpdater.stopWithErrorLog('This script should run with "preversion" and "postversion" scripts only!')
-}
+// if () {
+  GitUpdater.makeRelease(process.argv[2]);
+// }

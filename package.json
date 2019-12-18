@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pre-release": "node git",
-    "release": "node git",
+    "pre-release": "node git prerelease",
+    "release": "node git release",
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
     "reinstall": "rm -rf ./node_modules && yarn install",
