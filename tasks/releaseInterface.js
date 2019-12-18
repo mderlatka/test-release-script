@@ -1,9 +1,14 @@
 /* eslint-disable no-console */
 const { execSync } = require('child_process');
+const readline = require('readline');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
 const releaseType = process.argv[2];
+const input = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
 /**
  * @namespace ReleaseInterface
@@ -173,5 +178,11 @@ const ReleaseInterface = {
 }
 
 if (releaseType !== 'pre-release' || releaseType !== 'release') {
-  ReleaseInterface.makeRelease(releaseType);
+  input.question(`You are trying to execute ${releaseType}, are you sure to continue this process? [y/n]`, (answer) => {
+    if (answer === 'y') {
+      ReleaseInterface.makeRelease(releaseType);
+    } else {
+      input.close()
+    }
+  })
 }
