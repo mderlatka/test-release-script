@@ -53,11 +53,9 @@ const GitUpdater = {
     let status;
 
     try {
-      const status = await git.status()
-      console.log(status)
+      status = await git.status();
     } catch(err) {
-      console.log(err)
-      stopWithError(`ERROR: Something is wrong!`, err);
+      this.stopWithErrorLog(`Something is wrong!`, err);
     }
 
 
@@ -74,7 +72,7 @@ const GitUpdater = {
       const status = await git.status()
 
       if (status.ahead) {
-        this.stopWithErrorLog(`ERROR: Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
+        this.stopWithErrorLog(`Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
       }
 
       if (status.behind) {
@@ -83,7 +81,7 @@ const GitUpdater = {
 
       console.log(chalk.blue.bold(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`));
     } catch(err) {
-      this.stopWithErrorLog(`ERROR: While updating ${branch}!`, err);
+      this.stopWithErrorLog(`While updating ${branch}!`, err);
     }
   },
 
@@ -97,7 +95,7 @@ const GitUpdater = {
       console.log(chalk.blue.bold(`Rebasing branch ${branchToRebase} onto ${rebaseTarget}...`));
       await git.rebase([rebaseTarget, branchToRebase])
     } catch(err) {
-      this.stopWithErrorLog(`ERROR: Something is wrong!`, err);
+      this.stopWithErrorLog(`Something is wrong!`, err);
     }
   },
 
@@ -113,7 +111,7 @@ const GitUpdater = {
     const amountOfUncommittedFiles = await this.checkForUncommittedFiles();
 
     if (amountOfUncommittedFiles) {
-      this.stopWithErrorLog(`ERROR: You have some uncommitted changes!`);
+      this.stopWithErrorLog(`You have some uncommitted changes!`);
     }
 
     console.log(chalk.blue(`Updating branches...`));
@@ -123,6 +121,8 @@ const GitUpdater = {
       await this.updateBranch('master')
       await this.rebaseBranches('develop', 'master')
     }
+
+    process.exit(1)
   },
 
   /**
