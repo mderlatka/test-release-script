@@ -3,35 +3,22 @@ const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
 const scriptName = process.env.npm_lifecycle_event;
-const versionScriptArg = JSON.parse(process.env.npm_config_argv).original[1];
+const operationType = process.argv[2];
 
 /**
  * @namespace GitUpdater
  */
 const GitUpdater = {
-  /**
-   * Possible yarn version arguments and release type they belongs to.
-   */
-  possibleOperationTypes: {
-    prerelease: ['--prepatch', '--preminor', '--premajor', '--prerelease'],
-    release: ['--patch', '--minor', '--major'],
-  },
+
+
 
   /**
    * Returns operation type that depend on argument passed to yarn version script
    * @param {string} versionArg
    * @returns {('prerelease'|'release')}
    */
-  establishOperationType: function(scriptArg) {
-    let currentOperationType;
-  
-    Object.entries(this.possibleOperationTypes).forEach(([key, value]) => {
-      if(value.includes(scriptArg)) {
-        currentOperationType = key;
-      }
-    })
-  
-    return currentOperationType
+  bumpUpVersion: function(scriptArg) {
+
   },
 
   /**
@@ -116,7 +103,7 @@ const GitUpdater = {
     console.log(chalk.blue(`Updating branches...`));
     await this.updateBranch('develop')
   
-    if (operationType === 'release') {
+    if (scriptName === 'release') {
       await this.updateBranch('master')
       await this.rebaseBranches('develop', 'master')
     }
@@ -130,24 +117,28 @@ const GitUpdater = {
   finishRelease: async function(scriptArg) {
     const operationType = this.establishOperationType(scriptArg);
 
-    if (operationType === 'prerelease') {
-      await git.push('origin', 'develop');
-      await git.pushTags('origin');
-    } else {
-      await git.push('origin', 'master');
-      await git.pushTags('origin');
-      await this.rebaseBranches('master', 'develop');
-      await git.push('origin', 'develop');
+    try {
+      if (scriptName === 'pre-release') {
+        await git.push('origin', 'develop');
+        await git.pushTags('origin');
+      } else if (scriptName === 'release') {
+        await git.push('origin', 'master');
+        await git.pushTags('origin');
+        await this.rebaseBranches('master', 'develop');
+        await git.push('origin', 'develop');
+      }
+    } catch(err) {
+      this.stopWithErrorLog(`Something went wrong!`, err);
     }
   }
 }
 
-if (scriptName === 'preversion') {
+if (operationType === 'prepare') {
   console.log(chalk.bgBlue.white(' Running "preversion" script... '));
-  GitUpdater.prepareRelease(versionScriptArg);
-} else if (scriptName === 'postversion') {
+  GitUpdater.prepareRelease();
+} else if (operationType === 'finish') {
   console.log(chalk.bgBlue.white(' Running "postversion" script... '));
-  GitUpdater.finishRelease(versionScriptArg);
+  GitUpdater.finishRelease();
 } else {
   GitUpdater.stopWithErrorLog('This script should run with "preversion" and "postversion" scripts only!')
 }

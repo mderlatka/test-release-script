@@ -4,11 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "preversion": "node git",
-    "postversion": "yarn deploy && node git",
+    "pre-release": "node git prepare && node git finish",
+    "release": "node git prepare && yarn deploy && node git finish",
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
-    "reinstall": "rm -rf ./node_modules && yarn install"
+    "reinstall": "rm -rf ./node_modules && yarn install",
+    "lint-staged": "lint-staged"
+  },
+  "lint-staged": {
+    "src/*.js": "eslint"
   },
   "repository": {
     "type": "git",
@@ -24,6 +28,7 @@
     "chalk": "^3.0.0"
   },
   "dependencies": {
+    "lint-staged": "^9.5.0",
     "simple-git": "^1.128.0"
   }
 }
