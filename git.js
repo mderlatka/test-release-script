@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 const { execSync } = require('child_process');
-const { EOL } = require('os');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
 
@@ -9,7 +8,7 @@ const git = require('simple-git/promise')();
  */
 const GitUpdater = {
   logHeader: function(text) {
-    console.log(chalk.blue.bold(text + EOL));
+    console.log(chalk.blue.bold('\n' + text));
   },
 
   /**
