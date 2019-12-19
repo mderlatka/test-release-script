@@ -90,12 +90,15 @@ const ReleaseInterface = {
    */
   async rebaseBranches(rebaseTarget, branchToRebase) {
     try {
-      await git.rebase({ '--abort': null });
       await git.rebase([rebaseTarget, branchToRebase]);
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
     } catch (err) {
-      await git.rebase({ '--abort': null });
-      this.stopWithErrorLog('Something is wrong!', err);
+      console.log(err.git)
+      // try {
+      //   await git.rebase({ '--abort': null });
+      // } catch (err) {
+        this.stopWithErrorLog('Something is wrong!', err);
+      // }
     }
   },
 
