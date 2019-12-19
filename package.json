@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "pre-release": "node tasks/releaseInterface prerelease",
-    "release": "node tasks/releaseInterface release",
+    "pre-release": "node tasks/release prerelease",
+    "release": "node tasks/release release",
     "deploy": "echo \"BUILD\" && echo \"S3 TASK\"",
     "postdeploy": "echo \"AKAMAI TASK\"",
     "lint": "eslint src/**/*.js",

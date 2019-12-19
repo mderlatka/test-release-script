@@ -3,7 +3,6 @@ const { execSync } = require('child_process');
 const readline = require('readline');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
-
 const releaseType = process.argv[2];
 
 /**
@@ -11,7 +10,7 @@ const releaseType = process.argv[2];
  */
 const ReleaseInterface = {
   logHeader(text) {
-    console.log(chalk.blue.bold('\n' + text));
+    console.log(chalk.blue.bold(`\n${text}`));
   },
 
   /**
@@ -27,28 +26,29 @@ const ReleaseInterface = {
 
   /**
    * Executes script, using the output of parent process.
-   * @param {string} script 
+   * @param {string} script
    */
   execScript(script) {
     try {
       this.logHeader(`Executing script "${script}"`);
       execSync(script, { stdio: 'inherit' });
-    } catch(err) {
-      this.stopWithErrorLog(`Executing of script "${script}" failed!`)
+    } catch (err) {
+      this.stopWithErrorLog(`Executing of script "${script}" failed!`, err);
     }
   },
 
 
   /**
    * Upgrades version of repository.
-   * @param {string} versionType 
+   * @param {string} versionType
    */
   upgradeVersion(versionType) {
-    this.logHeader(`Upgrading version...`);
+    this.logHeader('Upgrading version...');
 
     if (versionType === 'prerelease') {
+      // eslint-disable-next-line global-require
       const { version } = require('../package.json');
-      const rcAlreadyExist = /\d-\d/.test(version)
+      const rcAlreadyExist = /\d-\d/.test(version);
 
       if (rcAlreadyExist) {
         this.execScript('yarn version --prerelease');
@@ -62,12 +62,12 @@ const ReleaseInterface = {
 
   /**
    * Updates branch with origin.
-   * @param {string} branch 
+   * @param {string} branch
    */
   async updateBranch(branch) {
     try {
-      await git.checkout(branch)
-      const status = await git.status()
+      await git.checkout(branch);
+      const status = await git.status();
 
       if (status.ahead) {
         this.stopWithErrorLog(`Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
@@ -78,7 +78,7 @@ const ReleaseInterface = {
       }
 
       console.log(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`);
-    } catch(err) {
+    } catch (err) {
       this.stopWithErrorLog(`While updating ${branch}!`, err);
     }
   },
@@ -90,39 +90,39 @@ const ReleaseInterface = {
    */
   async rebaseBranches(rebaseTarget, branchToRebase) {
     try {
-      await git.rebase([rebaseTarget, branchToRebase])
+      await git.rebase([rebaseTarget, branchToRebase]);
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
-    } catch(err) {
-      this.stopWithErrorLog(`Something is wrong!`, err);
+    } catch (err) {
+      this.stopWithErrorLog('Something is wrong!', err);
     }
   },
 
   /**
-   * Updates local git repository with origin, before release happens.
+   * Updates local git repository with origin, before release start.
    * - develop branch for operation argument equal "prerelease"
    * - develop and master for operation argument equal "release"
    * - rebase master onto develop for operation argument equal "release"
    * @param {string} operation
    */
-  async prepareLocalRepository(releaseType) {
+  async prepareLocalRepository(operation) {
     let status;
 
     try {
       status = await git.status();
-    } catch(err) {
-      this.stopWithErrorLog(`Something is wrong!`, err);
+    } catch (err) {
+      this.stopWithErrorLog('Something is wrong!', err);
     }
 
     if (status.files.length) {
-      this.stopWithErrorLog(`You have some uncommitted changes!`);
+      this.stopWithErrorLog('You have some uncommitted changes!');
     }
 
-    this.logHeader(`Updating local branches...`);
+    this.logHeader('Updating local branches...');
     await this.updateBranch('develop');
 
-    if (releaseType === 'release') {
-      await this.updateBranch('master')
-      await this.rebaseBranches('develop', 'master')
+    if (operation === 'release') {
+      await this.updateBranch('master');
+      await this.rebaseBranches('develop', 'master');
     }
   },
 
@@ -130,13 +130,13 @@ const ReleaseInterface = {
    * Updates git repository after release process.
    * - Pushes commits and tags
    * - Makes develop up to date with master if normal release happen
-   * @param {string} releaseType
+   * @param {string} operation
    */
-  async finishRelease(releaseType) {
-    this.logHeader('Updating repository after release...')
+  async finishRelease(operation) {
+    this.logHeader('Updating repository after release...');
 
     try {
-      if (releaseType === 'release') {
+      if (operation === 'release') {
         await git.push('origin', 'master');
         console.log('Pushed master to origin');
         await git.pushTags('origin');
@@ -150,37 +150,40 @@ const ReleaseInterface = {
         await git.pushTags('origin');
         console.log('Pushed tags to origin');
       }
-    } catch(err) {
-      this.stopWithErrorLog(`Something went wrong!`, err);
+    } catch (err) {
+      this.stopWithErrorLog('Something went wrong!', err);
     }
   },
 
   /**
    * Runs whole release process.
-   * @param {string} releaseType
+   * @param {string} operation
    */
-  async makeRelease(releaseType) {
-    await this.prepareLocalRepository(releaseType);
+  async makeRelease(operation) {
+    await this.prepareLocalRepository(operation);
 
     this.execScript('yarn install');
     this.execScript('yarn lint');
     this.execScript('yarn test:unit');
 
-    this.upgradeVersion(releaseType);
+    this.upgradeVersion(operation);
     this.execScript('yarn deploy');
 
-    await this.finishRelease(releaseType);
-  }
-}
+    await this.finishRelease(operation);
+  },
+};
 
 if (releaseType !== 'pre-release' || releaseType !== 'release') {
+  /**
+   * To prevent accidental release, creates question with confirm prompt.
+   */
   const input = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: '> '
+    prompt: '> ',
   });
 
-  console.log(`You are trying to execute ${releaseType}, are you sure to continue this process? [y/n]`)
+  console.log(`You are trying to run ${releaseType}, are you sure to continue this process? ${chalk.blue.bold('[y/n]')}`);
   input.prompt();
 
   input.on('line', (answer) => {
