@@ -93,7 +93,7 @@ const ReleaseInterface = {
       await git.rebase([rebaseTarget, branchToRebase]);
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
     } catch (err) {
-      await git.rebase({ '--abort': 'true' });
+      await git.rebase({ '--abort': null });
       this.stopWithErrorLog('Something is wrong!', err);
     }
   },
