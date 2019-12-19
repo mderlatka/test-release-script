@@ -60,15 +60,6 @@ const ReleaseInterface = {
     }
   },
 
-  async abortRebase(text) {
-    try {
-      await git.rebase({ '--abort': null });
-      this.stopWithErrorLog(text);
-    } catch (err) {
-      this.stopWithErrorLog('Something is wrong!', err);
-    }
-  },
-
   /**
    * Updates branch with origin.
    * @param {string} branch
@@ -79,14 +70,15 @@ const ReleaseInterface = {
       const status = await git.status();
 
       if (status.ahead) {
-        this.stopWithErrorLog(`Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
+        throw new Error(`Your local ${status.current} is ${status.ahead} commits ahead ${status.tracking}`);
       }
 
       if (status.behind) {
         try {
           await git.pull('origin', branch, { '--rebase': 'true' });
         } catch (err) {
-          await this.abortRebase(`Some conflicts were found, while rebasing local/${branch} onto origin/${branch}!`);
+          await git.rebase({ '--abort': null });
+          throw new Error(`Some conflicts were found, while rebasing local/${branch} onto origin/${branch}!`);
         }
       }
 
@@ -106,7 +98,8 @@ const ReleaseInterface = {
       await git.rebase([rebaseTarget, branchToRebase]);
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
     } catch (err) {
-      await this.abortRebase(`Some conflicts were found, while rebasing ${branchToRebase} onto ${rebaseTarget}!`);
+      await git.rebase({ '--abort': null });
+      this.stopWithErrorLog(`Some conflicts were found, while rebasing ${branchToRebase} onto ${rebaseTarget}!`);
     }
   },
 
@@ -118,13 +111,7 @@ const ReleaseInterface = {
    * @param {string} operation
    */
   async prepareLocalRepository(operation) {
-    let status;
-
-    try {
-      status = await git.status();
-    } catch (err) {
-      this.stopWithErrorLog('Something is wrong!', err);
-    }
+    const status = await git.status();
 
     if (status.files.length) {
       this.stopWithErrorLog('You have some uncommitted changes!');
