@@ -60,6 +60,15 @@ const ReleaseInterface = {
     }
   },
 
+  async abortRebase(text) {
+    try {
+      await git.rebase({ '--abort': null });
+      this.stopWithErrorLog(text);
+    } catch (err) {
+      this.stopWithErrorLog('Something is wrong!', err);
+    }
+  },
+
   /**
    * Updates branch with origin.
    * @param {string} branch
@@ -74,7 +83,11 @@ const ReleaseInterface = {
       }
 
       if (status.behind) {
-        await git.pull('origin', branch, { '--rebase': 'true' });
+        try {
+          await git.pull('origin', branch, { '--rebase': 'true' });
+        } catch (err) {
+          await this.abortRebase(`Some conflicts were found, while rebasing local/${branch} onto origin/${branch}!`);
+        }
       }
 
       console.log(`${branch} branch ${status.behind ? 'has been updated.' : 'is up to date'}`);
@@ -93,12 +106,7 @@ const ReleaseInterface = {
       await git.rebase([rebaseTarget, branchToRebase]);
       console.log(`Branch ${branchToRebase} rebased onto ${rebaseTarget}`);
     } catch (err) {
-      console.log(err.git)
-      // try {
-      //   await git.rebase({ '--abort': null });
-      // } catch (err) {
-        this.stopWithErrorLog('Something is wrong!', err);
-      // }
+      await this.abortRebase(`Some conflicts were found, while rebasing ${branchToRebase} onto ${rebaseTarget}!`);
     }
   },
 
