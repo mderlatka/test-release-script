@@ -3,12 +3,13 @@ const { execSync } = require('child_process');
 const readline = require('readline');
 const chalk = require('chalk');
 const git = require('simple-git/promise')();
+
 const releaseType = process.argv[2];
 
 /**
- * @namespace ReleaseInterface
+ * @namespace ReleaseService
  */
-const ReleaseInterface = {
+const ReleaseService = {
   logHeader(text) {
     console.log(chalk.blue.bold(`\n${text}`));
   },
@@ -183,14 +184,26 @@ if (releaseType !== 'pre-release' || releaseType !== 'release') {
     prompt: '> ',
   });
 
-  console.log(`You are trying to run ${releaseType}, are you sure to continue this process? ${chalk.blue.bold('[y/n]')}`);
+  const prettyReleaseType = () => {
+    const text = ` ${releaseType.toUpperCase()} `;
+
+    return releaseType === 'release'
+      ? chalk.bgRedBright.white.bold(text)
+      : chalk.bgYellowBright.black(text);
+  };
+
+  console.log(
+    `You are trying to run ${prettyReleaseType()},`,
+    `are you sure to continue this process? ${chalk.blue.bold('[y/n]')}`,
+  );
+
   input.prompt();
 
-  input.on('line', (answer) => {
+  input.on('line', (answer = 'y') => {
     switch (answer.trim().toLowerCase()) {
       case 'y':
         input.close();
-        ReleaseInterface.makeRelease(releaseType);
+        ReleaseService.makeRelease(releaseType);
         break;
       case 'n':
         process.exit(0);
