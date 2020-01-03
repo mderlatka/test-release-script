@@ -199,9 +199,10 @@ if (releaseType !== 'pre-release' || releaseType !== 'release') {
 
   input.prompt();
 
-  input.on('line', (answer = 'y') => {
+  input.on('line', (answer) => {
     switch (answer.trim().toLowerCase()) {
       case 'y':
+      case '':
         input.close();
         ReleaseService.makeRelease(releaseType);
         break;
